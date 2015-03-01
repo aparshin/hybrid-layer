@@ -1,0 +1,11 @@
+html, body, #map {
+    height: 100%;
+    margin: 0;
+}
+
+#slider {
+    position: absolute;
+    width: 500px;
+    top: 10px;
+    left: 50px;
+}
