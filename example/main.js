@@ -27,7 +27,7 @@ $(function() {
     var spotLayer = new L.HybridLayer('http://aparshin.ru/maps/render/{z}_{x}_{y}', {colorFunc: colorFunc});
     var activeLayer = spotLayer;
 
-    spotLayer.addTo(map);
+    activeLayer.addTo(map);
 
     L.control.layers({
         'SPOT-5 Imagery': spotLayer,
@@ -40,9 +40,10 @@ $(function() {
 
     var activeObjs = {};
     var resortedObjs = [];
-    map.on('click', function(e) {
-        var point = map.options.crs.latLngToPoint(e.latlng, map.getZoom());
-        var objs = activeLayer.getObjectsInPixel(Math.round(point.x), Math.round(point.y));
+    map.on('mousemove', function(e) {
+        var objs = activeLayer.getObjects(e.latlng, 4);
+        // var point = map.options.crs.latLngToPoint(e.latlng, map.getZoom());
+        // var objs = activeLayer.getObjectsInPixel(Math.round(point.x), Math.round(point.y), 4);
 
         /* if (objs.length) {
             var prevIndex = resortedObjs.indexOf(objs[0]);

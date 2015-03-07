@@ -5,6 +5,10 @@ var HybridTileViewer = function(imgUrl, infoUrl, options) {
     this._indColors = [];
     this.options = options;
 
+    this._sortFunc = function(a, b) {
+        return a - b;
+    }
+
     var infoDef = $.getJSON(infoUrl);
 
     var img = new Image();
@@ -70,14 +74,36 @@ HybridTileViewer.prototype.render = function(ctx) {
     // console.log(new Date() - t);
 }
 
-HybridTileViewer.prototype.getObjectsInPixel = function(x, y) {
-    var index = this._buf[y*256 + x] & 0xffffff;
-    return this.indexes[index];
+HybridTileViewer.prototype.getObjectsNearPixel = function(x, y, size) {
+    size = size || 1;
+    var xmin = Math.max(x - Math.round(size/2) + 1, 0),
+        ymin = Math.max(y - Math.round(size/2) + 1, 0),
+        xmax = Math.min(xmin + size, 255),
+        ymax = Math.min(ymin + size, 255);
+
+    var commonObjHash = {};
+    
+    for (var ix = xmin; ix < xmax; ix++) {
+        for (var iy = ymin; iy < ymax; iy++) {
+            var index = this._buf[iy*256 + ix] & 0xffffff;
+            var objs = this.indexes[index];
+            for (var i = 0; i < objs.length; i++) {
+                commonObjHash[objs[i]] = true;
+            }
+        }
+    }
+
+    var res = [];
+    for (var i in commonObjHash) {
+        res.push(i);
+    }
+
+    return res.sort(this._sortFunc);
 }
 
 HybridTileViewer.prototype.sort = function(sortFunc) {
+    this._sortFunc = sortFunc;
     for (var k in this.indexes) {
         this.indexes[k] = this.indexes[k].sort(sortFunc);
     }
 }
-

@@ -70,8 +70,11 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
         console.log('Total (%d): %d', count, new Date() - time);
     },
 
-    getObjectsInPixel: function(x, y) {
-        var tx = Math.floor(x / 256),
+    getObjects: function(latlng, size) {
+        var point = this._map.options.crs.latLngToPoint(latlng, this._map.getZoom()),
+            x = Math.round(point.x),
+            y = Math.round(point.y),
+            tx = Math.floor(x / 256),
             ty = Math.floor(y / 256);
 
         var tile = this._tiles[tx + ':' + ty];
@@ -80,7 +83,7 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
             var tileViewer = this._tileViewers[L.stamp(tile)];
 
             if (tileViewer) {
-                return tileViewer.viewer.getObjectsInPixel(x % 256, y % 256);
+                return tileViewer.viewer.getObjectsNearPixel(x % 256, y % 256, size);
             }
         }
 
