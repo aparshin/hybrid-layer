@@ -26,7 +26,6 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
                 y: tilePoint.y,
                 z: zoom
             }),
-            // prefix = 'http://localhost/maps/rendert/' + zoom + '_' + tilePoint.x + '_' + tilePoint.y,
             crs = this._map.options.crs,
             id = L.stamp(canvas);
 
@@ -41,7 +40,7 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
             {color: this.options.colorFunc}
         );
 
-        tileViewer.promise.done(function() {
+        tileViewer.promise.then(function() {
             _this._tileViewers[id] = {
                 bounds: bounds,
                 viewer: tileViewer,
