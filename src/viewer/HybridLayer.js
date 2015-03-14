@@ -3,6 +3,9 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
         async: true,
         colorFunc: function(i) {
             return [0, 0, 0, 0.2];
+        },
+        sortFunc: function(a, b) {
+            return a - b;
         }
     },
 
@@ -11,6 +14,8 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
 
         this._tileViewers = {};
         this._url = url;
+
+        this._objectsManager._colorFunc = this.options.colorFunc;
 
         this.on('tileunload', function(e) {
             var id = L.stamp(e.tile);
@@ -37,10 +42,11 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
         var tileViewer = new HybridTileViewer(
             prefix + '_img.png', 
             prefix + '_info.txt', 
-            {color: this.options.colorFunc}
+            {objectsManager: this._objectsManager}
         );
 
         tileViewer.promise.then(function() {
+            tileViewer.sort(_this.options.sortFunc);
             _this._tileViewers[id] = {
                 bounds: bounds,
                 viewer: tileViewer,
@@ -59,6 +65,8 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
 
         var time = new Date(),
             count = 0;
+
+        this._objectsManager.clearCache();
 
         for (var t in this._tileViewers) {
             var tile = this._tileViewers[t];
@@ -93,6 +101,23 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
     sort: function(sortFunc) {
         for (var id in this._tileViewers) {
             this._tileViewers[id].viewer.sort(sortFunc);
+        }
+    },
+
+    // stores information about single objects' colors
+    // shares this information between all the tiles
+    _objectsManager: {
+        _objColors: [],
+        _colorFunc: null,
+        getColor: function(objId) {
+            var c = this._objColors;
+
+            c[objId] = c[objId] || this._colorFunc(objId);
+
+            return c[objId];
+        },
+        clearCache: function() {
+            this._objColors = [];
         }
     }
 })

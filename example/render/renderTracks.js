@@ -15,10 +15,10 @@ files.forEach(function(fileName) {
 });
 
 trackParserManager.process().done(function(tracks) {
-    var hybridRenderer = new HybridRenderer();
     var geoJSON = {
         type: 'FeatureCollection', 
         features: tracks.map(function(track){return track.geoJSON;})
     };
-    hybridRenderer.render(geoJSON, {maxZoom: 10});
+    var hybridRenderer = new HybridRenderer(geoJSON);
+    hybridRenderer.render({maxZoom: 10});
 });

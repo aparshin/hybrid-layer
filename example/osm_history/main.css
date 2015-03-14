@@ -1,0 +1,25 @@
+html, body, #map {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    background-color: #0d0d27;
+}
+
+#map {
+    background-color: transparent;
+}
+
+#playButton {
+    position: absolute;
+    top: 8px;
+    left: 50px;
+}
+
+#slider {
+    position: absolute;
+    width: 500px;
+    top: 13px;
+    left: 121px;
+}

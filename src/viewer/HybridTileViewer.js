@@ -38,11 +38,9 @@ var HybridTileViewer = function(imgUrl, infoUrl, options) {
 }
 
 HybridTileViewer.prototype.render = function(ctx) {
-    var t = new Date();
     var dataInfo = ctx.getImageData(0, 0, 256, 256),
         data = dataInfo.data;
 
-    this._objColors = [];
     this._indColors = [];
     for (var p = 0; p < 256*256; p++) {
         var index = this._buf[p] & 0xffffff;
@@ -52,13 +50,16 @@ HybridTileViewer.prototype.render = function(ctx) {
                 a = [0, 0, 0, 0];
             
             for (var i = 0; i < objs.length; i++) {
-                var b = this._objColors[objs[i]] = this._objColors[objs[i]] || this.options.color(objs[i]);
+                var b = this.options.objectsManager.getColor(objs[i]);
                 var ta = b[3]*(1.0 - a[3]);
                 var ra = a[3] + ta;
-                var r0 = (a[0]*a[3] + b[0]*ta)/ra;
-                var r1 = (a[1]*a[3] + b[1]*ta)/ra;
-                var r2 = (a[2]*a[3] + b[2]*ta)/ra;
-                a = [r0, r1, r2, ra];
+
+                if (ra > 0) {
+                    var r0 = (a[0]*a[3] + b[0]*ta)/ra;
+                    var r1 = (a[1]*a[3] + b[1]*ta)/ra;
+                    var r2 = (a[2]*a[3] + b[2]*ta)/ra;
+                    a = [r0, r1, r2, ra];
+                }
             }
             this._indColors[index] = a;
         }
@@ -71,7 +72,6 @@ HybridTileViewer.prototype.render = function(ctx) {
     }
 
     ctx.putImageData(dataInfo, 0, 0);
-    // console.log(new Date() - t);
 }
 
 HybridTileViewer.prototype.getObjectsNearPixel = function(x, y, size) {
