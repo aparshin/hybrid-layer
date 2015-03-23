@@ -6,7 +6,7 @@ var TileRenderer = function() {
     this.buf = new Uint32Array(256*256);
     this.indexes = [[]];
     this.debugHist = [256*256];
-    this.objs = [];
+    this.objs = []; //for external use
 }
 
 
@@ -17,6 +17,7 @@ TileRenderer.prototype.addObject = function(ctx, id, options) {
         data = ctx.getImageData(0, 0, 256, 256).data,
         cache = [];
 
+    //TODO: check that new id is not already in array
     this.objs.push(id);
     
     for (var p = 0; p < 256*256; p++) {
@@ -94,7 +95,7 @@ TileRenderer.prototype.saveToFiles = function(prefix) {
 
     this.removeNotUsed();
 
-    var pngFile = fs.createWriteStream(prefix + '_img.png'),
+    var pngFD = fs.openSync(prefix + '_img.png', 'w'),
         canvas = new Canvas(256, 256),
         ctx = canvas.getContext('2d');
 
@@ -113,17 +114,58 @@ TileRenderer.prototype.saveToFiles = function(prefix) {
     var stream = canvas.pngStream();
 
     stream.on('data', function(chunk){
-        pngFile.write(chunk);
+        fs.writeSync(pngFD, chunk, null, chunk.length);
     });
 
     stream.on('end', function(){
-        pngFile.end();
+        fs.closeSync(pngFD);
         def.resolve();
     });
     
     var txtFile = fs.writeFileSync(prefix + '_info.txt', JSON.stringify(this.indexes));
 
     return def.promise;
+}
+
+TileRenderer.prototype.loadFromFiles = function(filesPrefix) {
+    var pngFilename = filesPrefix + '_img.png',
+        infoFilename = filesPrefix + '_info.txt';
+
+    if (!fs.existsSync(pngFilename) || !fs.existsSync(infoFilename)) {
+        return;
+    }
+    
+    var canvas = new Canvas(256, 256),
+        ctx = canvas.getContext('2d'),
+        img = new Canvas.Image();
+
+    img.src = pngFilename;
+    ctx.drawImage(img, 0, 0, 256, 256);
+    
+    var data = ctx.getImageData(0, 0, 256, 256).data;
+
+    this.debugHist = [];
+    this.buf = new Uint32Array(256*256);
+    for (var i = 0; i < 256*256; i++) {
+        var ind = data[4*i] + (data[4*i+1] << 8) + (data[4*i+2] << 16);
+        this.buf[i] = ind;
+        this.debugHist[ind] = (this.debugHist[ind] || 0) + 1;
+    }
+
+    this.indexes = JSON.parse(fs.readFileSync(infoFilename));
+    var objsHash = {};
+
+    for (var i = 0; i < this.indexes.length; i++) {
+        for (var j = 0; j < this.indexes[i].length; j++) {
+            objsHash[this.indexes[i][j]] = true;
+        }
+    }
+
+    this.objs = [];
+    for (var i in objsHash) {
+        this.objs.push(objsHash[i]);
+    }
+    // console.log('load from tiles', this.indexes, this.debugHist, this.objs);
 }
 
 module.exports = TileRenderer;

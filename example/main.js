@@ -19,10 +19,11 @@ $(function() {
             1.0
         ]*/
         var g = i in activeObjs ? 255 : 0;
-        return [0, g, 0, opacity];
+        return [g, 0, 255, opacity];
     };
 
     var map = L.map('map', {center: [0, 0], zoom: 1});
+    var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png').addTo(map);
     var trackLayer = new L.HybridLayer('http://aparshin.ru/maps/rendert/{z}_{x}_{y}', {colorFunc: colorFunc});
     var spotLayer = new L.HybridLayer('http://aparshin.ru/maps/render/{z}_{x}_{y}', {colorFunc: colorFunc});
     var activeLayer = spotLayer;

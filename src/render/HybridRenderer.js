@@ -1,6 +1,7 @@
 var TileRenderer = require('./TileRenderer.js'),
     proj4 = require('proj4'),
-    Canvas = require('../../../node-canvas');
+    Canvas = require('../../../node-canvas'),
+    Q = require('q');
 
     
 var WORLD_SIZE = proj4('EPSG:3857').forward([180, 0])[0]*2;
@@ -41,8 +42,6 @@ var HybridRenderer = function(geoJSON) {
 HybridRenderer.prototype._parseGeom = function(geoJSON) {
     var mercProj = this._mercProj;
     if (geoJSON.type === 'FeatureCollection') {
-        console.log('FeatureCollection');
-
         geoJSON.features.forEach(this._parseGeom.bind(this));
     } else if (geoJSON.type === 'Feature'){
         return this._parseGeom(geoJSON.geometry);
@@ -62,8 +61,16 @@ HybridRenderer.prototype._parseGeom = function(geoJSON) {
     }
 }
 
-HybridRenderer.prototype.renderTile = function(tilePos) {
+HybridRenderer.prototype.renderTile = function(tilePos, options) {
+    options = options || {};
+    var indexShift = options.indexShift || 0;
+
     var tileRenderer = new TileRenderer();
+
+    if (options.loadPrefix) {
+        tileRenderer.loadFromFiles(options.loadPrefix);
+    }
+
     var tileSize = WORLD_SIZE / Math.pow(2, tilePos.z);
     var bounds = {
         min: [tilePos.x * tileSize, tilePos.y * tileSize], 
@@ -76,7 +83,7 @@ HybridRenderer.prototype.renderTile = function(tilePos) {
         for (var p = 0; p < coords.length; p++) {
             if (isInside(bounds, coords[p])) {
                 var ctx = renderRingToTile(this._drawContext, tilePos, coords, isPoly);
-                tileRenderer.addObject(ctx, g);
+                tileRenderer.addObject(ctx, g + indexShift);
                 break;
             }
         }
@@ -84,27 +91,60 @@ HybridRenderer.prototype.renderTile = function(tilePos) {
     return tileRenderer;
 }
 
-HybridRenderer.prototype._processTile = function(tilePos) {
+HybridRenderer.prototype._processTile = function(options) {
+    if (!this._renderQueue.length) {
+        this._renderDefer.resolve();
+        return;
+    }
+
+    var tilePos = this._renderQueue.shift(),
+        _this = this;
+
     console.log(tilePos);
-    var tileRenderer = this.renderTile(tilePos);
+
+    var filePrefix = this._targetDir + tilePos.z + '_' + tilePos.x + '_' + tilePos.y;
+
+    var renderOptions = {
+        indexShift: options.indexShift
+    }
+    if (options.loadFromFiles) {
+        renderOptions.loadPrefix = filePrefix;
+    }
+
+    var tileRenderer = this.renderTile(tilePos, renderOptions);
     console.log('Objects in tile: ', tileRenderer.objs.length);
 
     if (tileRenderer.objs.length) {
-        var filePrefix = this._targetDir + tilePos.z + '_' + tilePos.x + '_' + tilePos.y;
-        tileRenderer.saveToFiles(filePrefix);
-        if (tilePos.z < this._maxZoom) {
-            this._processTile({x: 2*tilePos.x,   y: 2*tilePos.y,   z: tilePos.z+1});
-            this._processTile({x: 2*tilePos.x+1, y: 2*tilePos.y,   z: tilePos.z+1});
-            this._processTile({x: 2*tilePos.x,   y: 2*tilePos.y+1, z: tilePos.z+1});
-            this._processTile({x: 2*tilePos.x+1, y: 2*tilePos.y+1, z: tilePos.z+1});
-        }
-    };
+        tileRenderer.saveToFiles(filePrefix).then(function() {
+            if (tilePos.z < _this._maxZoom) {
+                _this._renderQueue.push({x: 2*tilePos.x,   y: 2*tilePos.y,   z: tilePos.z+1});
+                _this._renderQueue.push({x: 2*tilePos.x+1, y: 2*tilePos.y,   z: tilePos.z+1});
+                _this._renderQueue.push({x: 2*tilePos.x,   y: 2*tilePos.y+1, z: tilePos.z+1});
+                _this._renderQueue.push({x: 2*tilePos.x+1, y: 2*tilePos.y+1, z: tilePos.z+1});
+            }
+            setTimeout(_this._processTile.bind(_this, options), 0);
+        });
+    } else {
+        setTimeout(this._processTile.bind(this, options), 0);
+    }
+
 }
 
 HybridRenderer.prototype.render = function(options) {
+    //TODO: just pass options, don't use class attributes?
     this._maxZoom = options.maxZoom || 7;
     this._targetDir = options.targetDir || './result/';
-    this._processTile({z: 0, x: 0, y: 0});
+    this._renderQueue = [{z: 0, x: 0, y: 0}];
+    this._renderDefer = new Q.defer();
+
+    var tileOptions = {
+        indexShift: options.indexShift,
+        loadFromFiles: options.loadFromFiles
+    }
+
+    this._processTile(tileOptions);
+
+    return this._renderDefer.promise;
 }
 
 module.exports = HybridRenderer;
