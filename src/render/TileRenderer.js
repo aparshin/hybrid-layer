@@ -91,9 +91,9 @@ TileRenderer.prototype.analyze = function() {
     // console.log('Number of pixels: ', hist2);
 }
 
-TileRenderer.prototype.saveToFiles = function(prefix) {
+TileRenderer.prototype.saveToFiles = function(prefix, skipOptimization) {
 
-    this.removeNotUsed();
+    skipOptimization || this.removeNotUsed();
 
     var pngFD = fs.openSync(prefix + '_img.png', 'w'),
         canvas = new Canvas(256, 256),
@@ -127,6 +127,7 @@ TileRenderer.prototype.saveToFiles = function(prefix) {
     return def.promise;
 }
 
+//suppose that already rendered objects and objects from file are not intersected
 TileRenderer.prototype.loadFromFiles = function(filesPrefix) {
     var pngFilename = filesPrefix + '_img.png',
         infoFilename = filesPrefix + '_info.txt';
@@ -143,29 +144,39 @@ TileRenderer.prototype.loadFromFiles = function(filesPrefix) {
     ctx.drawImage(img, 0, 0, 256, 256);
     
     var data = ctx.getImageData(0, 0, 256, 256).data;
+    var newIndexes = JSON.parse(fs.readFileSync(infoFilename));
 
-    this.debugHist = [];
-    this.buf = new Uint32Array(256*256);
+    var mergeCache = {};
     for (var i = 0; i < 256*256; i++) {
-        var ind = data[4*i] + (data[4*i+1] << 8) + (data[4*i+2] << 16);
-        this.buf[i] = ind;
-        this.debugHist[ind] = (this.debugHist[ind] || 0) + 1;
+        var ind = data[4*i] + (data[4*i+1] << 8) + (data[4*i+2] << 16),
+            prevInd = this.buf[i],
+            mergeInd = prevInd + '_' + ind;
+
+        if (!ind) {continue;}
+
+        if (!mergeCache[mergeInd]) {
+            mergeCache[mergeInd] = this.indexes.length;
+            this.indexes.push(newIndexes[ind].concat(this.indexes[prevInd]));
+        }
+        this.debugHist[prevInd]--;
+
+        var newInd = mergeCache[mergeInd];
+        this.buf[i] = newInd;
+        this.debugHist[newInd] = (this.debugHist[newInd] || 0) + 1;
     }
 
-    this.indexes = JSON.parse(fs.readFileSync(infoFilename));
     var objsHash = {};
 
-    for (var i = 0; i < this.indexes.length; i++) {
-        for (var j = 0; j < this.indexes[i].length; j++) {
-            objsHash[this.indexes[i][j]] = true;
+    //update this.objs
+    for (var i = 0; i < newIndexes.length; i++) {
+        for (var j = 0; j < newIndexes[i].length; j++) {
+            objsHash[newIndexes[i][j]] = true;
         }
     }
 
-    this.objs = [];
     for (var i in objsHash) {
         this.objs.push(objsHash[i]);
     }
-    // console.log('load from tiles', this.indexes, this.debugHist, this.objs);
 }
 
 module.exports = TileRenderer;

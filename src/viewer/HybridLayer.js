@@ -22,6 +22,12 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
 
             delete this._tileViewers[id];
         }, this);
+
+        if (this.options.infoFile) {
+            $.getJSON(this.options.infoFile).then(function(info) {
+                this.objectsInfo = info;
+            }.bind(this))
+        }
     },
 
     drawTile: function(canvas, tilePoint, zoom) {

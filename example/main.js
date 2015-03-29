@@ -24,7 +24,11 @@ $(function() {
 
     var map = L.map('map', {center: [0, 0], zoom: 1});
     var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png').addTo(map);
-    var trackLayer = new L.HybridLayer('http://aparshin.ru/maps/rendert/{z}_{x}_{y}', {colorFunc: colorFunc});
+    // var trackLayer = new L.HybridLayer('http://localhost/maps/rendert3/{z}_{x}_{y}', {
+    var trackLayer = new L.HybridLayer('http://aparshin.ru/maps/rendert/{z}_{x}_{y}', {
+        colorFunc: colorFunc,
+        infoFile: 'http://localhost/maps/rendert3/filenames.js'
+    });
     var spotLayer = new L.HybridLayer('http://aparshin.ru/maps/render/{z}_{x}_{y}', {colorFunc: colorFunc});
     var activeLayer = spotLayer;
 
@@ -60,6 +64,12 @@ $(function() {
 
             return i1 - i2 || id1 - id2;
         });*/
+
+        if (activeLayer.objectsInfo && objs.length) {
+            console.log(objs.map(function(objID) {
+                return activeLayer.objectsInfo[objID]
+            }));
+        }
 
         activeObjs = {};
         for (var i = 0; i < objs.length; i++) {
