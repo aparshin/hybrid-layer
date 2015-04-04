@@ -5,7 +5,8 @@ var TileRenderer = require('./TileRenderer.js'),
 
     
 var WORLD_SIZE = proj4('EPSG:3857').forward([180, 0])[0]*2,
-    MAX_DISTANCE = 100000;
+    MAX_DISTANCE = 100000,
+    MIN_POINTS = 10;
 
 var renderRingToTile = function(ctx, tilePos, coords, isPoly) {
     var pixelSize = WORLD_SIZE / Math.pow(2, tilePos.z + 8);
@@ -93,7 +94,11 @@ HybridRenderer.prototype._parseGeom = function(geoJSON, filename) {
         }
 
         for (var c = 0; c < coords.length; c++) {
-            var gmerc = coords[c].map(function(p) {
+            if (coords[c].length < MIN_POINTS) {
+                continue;
+            }
+
+            var gmerc = coords[c].map(function(p, index) {
                 var pm = mercProj.forward(p);
                 return [pm[0] + WORLD_SIZE/2, WORLD_SIZE/2 - pm[1]];
             });
@@ -152,14 +157,13 @@ HybridRenderer.prototype._processTile = function(options) {
     var tilePos = this._renderQueue.shift(),
         _this = this;
 
-    console.log(tilePos);
-
     var renderOptions = {
         indexShift: options.indexShift
     }
 
     var tileRenderer = this.renderTile(tilePos, renderOptions);
-    console.log('Objects in tile: ', tileRenderer.objs.length);
+
+    console.log(tilePos, tileRenderer.objs.length);
 
     if (tileRenderer.objs.length) {
 
