@@ -39,26 +39,33 @@ var HybridTileViewer = function(imgUrl, infoUrl, options) {
 
 HybridTileViewer.prototype.render = function(ctx) {
     var dataInfo = ctx.getImageData(0, 0, 256, 256),
-        data = dataInfo.data;
+        data = dataInfo.data,
+        objManager = this.options.objectsManager;
 
     this._indColors = [];
     for (var p = 0; p < 256*256; p++) {
         var index = this._buf[p] & 0xffffff;
 
         if (!this._indColors[index]) {
+
             var objs = this.indexes[index],
                 a = [0, 0, 0, 0];
-            
-            for (var i = 0; i < objs.length; i++) {
-                var b = this.options.objectsManager.getColor(objs[i]);
-                var ta = b[3]*(1.0 - a[3]);
-                var ra = a[3] + ta;
 
-                if (ra > 0) {
-                    var r0 = (a[0]*a[3] + b[0]*ta)/ra;
-                    var r1 = (a[1]*a[3] + b[1]*ta)/ra;
-                    var r2 = (a[2]*a[3] + b[2]*ta)/ra;
-                    a = [r0, r1, r2, ra];
+            if (objManager.getIndexColor) {
+                a = objManager.getIndexColor(objs);
+            } else {
+            
+                for (var i = 0; i < objs.length; i++) {
+                    var b = objManager.getColor(objs[i]);
+                    var ta = b[3]*(1.0 - a[3]);
+                    var ra = a[3] + ta;
+
+                    if (ra > 0) {
+                        var r0 = (a[0]*a[3] + b[0]*ta)/ra;
+                        var r1 = (a[1]*a[3] + b[1]*ta)/ra;
+                        var r2 = (a[2]*a[3] + b[2]*ta)/ra;
+                        a = [r0, r1, r2, ra];
+                    }
                 }
             }
             this._indColors[index] = a;

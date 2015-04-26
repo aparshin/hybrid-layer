@@ -20,7 +20,11 @@ var renderTile = function(x, y, z) {
         params.year = year;
         var img = new Canvas.Image;
         img.src = imgTemplate(params);
-        ctx.drawImage(img, 0, 0, 256, 256);
+        try {
+            ctx.drawImage(img, 0, 0, 256, 256);
+        } catch (e) {
+            return;
+        }
 
         for (var a = 0; a < alphaLevels; a++) {
             tileRender.addObject(ctx, alphaLevels * index + a, {

@@ -54,6 +54,6 @@ var downloadTileSubtree = function(x, y, z, maxZ) {
     });
 }
 
-downloadTileSubtree(40, 77, 7, 10).then(function() {
+downloadTileSubtree(0, 0, 0, 4).then(function() {
     console.log('done');
 })

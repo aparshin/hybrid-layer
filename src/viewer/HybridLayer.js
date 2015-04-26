@@ -14,8 +14,13 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
 
         this._tileViewers = {};
         this._url = url;
+        this._renderHooks = [];
 
         this._objectsManager._colorFunc = this.options.colorFunc;
+
+        if (this.options.indexFunc) {
+            this._objectsManager.getIndexColor = this.options.indexFunc;
+        }
 
         this.on('tileunload', function(e) {
             var id = L.stamp(e.tile);
@@ -27,6 +32,14 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
             $.getJSON(this.options.infoFile).then(function(info) {
                 this.objectsInfo = info;
             }.bind(this))
+        }
+    },
+
+    _renderTileByID: function(id) {
+        var tile = this._tileViewers[id];
+        tile.viewer.render(tile.canvas.getContext('2d'));
+        for (var r = 0; r < this._renderHooks.length; r++) {
+            this._renderHooks[r](tile.canvas, tile.tilePoint, tile.zoom, tile.viewer);
         }
     },
 
@@ -56,10 +69,12 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
             _this._tileViewers[id] = {
                 bounds: bounds,
                 viewer: tileViewer,
-                canvas: canvas
+                canvas: canvas,
+                tilePoint: tilePoint,
+                zoom: zoom
             };
 
-            tileViewer.render(canvas.getContext('2d'));
+            _this._renderTileByID(id);
             _this.tileDrawn(canvas);
         }, function() {
             _this.tileDrawn(canvas);
@@ -78,7 +93,7 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
             var tile = this._tileViewers[t];
             if (tile.bounds.intersects(mapBounds)) {
                 count++;
-                tile.viewer.render(tile.canvas.getContext('2d'));
+                this._renderTileByID(t);
             }
         }
         console.log('Total (%d): %d', count, new Date() - time);
@@ -125,6 +140,10 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
         clearCache: function() {
             this._objColors = [];
         }
+    },
+
+    addRenderHook: function(renderHook) {
+        this._renderHooks.push(renderHook);
     }
 })
 

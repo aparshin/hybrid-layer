@@ -57,12 +57,19 @@ $(function() {
         return res;
     };
 
-    var map = L.map('map', {center: [55.3, 37.7], zoom: 9});
-    var historyLayer = new L.HybridLayer('http://aparshin.ru/maps/renderh4/{z}_{y}_{x}', {
+    // var map = L.map('map', {center: [55.3, 37.7], zoom: 9});
+    var map = L.map('map', {center: [30, 0], zoom: 2, maxZoom: 4});
+    var historyLayer = new L.HybridLayer('http://aparshin.ru/maps/renderh4w/{z}_{y}_{x}', {
         colorFunc: colorFunc,
         sortFunc: function(a, b) {
             return b - a;
-        }
+        },
+        attribution: 'Data © <a href="http://osm.org/about/" target="_blank">OpenStreetMap</a> contributors'
     });
     historyLayer.addTo(map);
+
+    $('#info-trigger').click(function() {
+        $('#info-trigger').hide();
+        $('#info-details').show();
+    })
 })

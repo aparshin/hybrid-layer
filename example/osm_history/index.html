@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title>Renderer</title>
+    <title>OpenStreetMaps history using Hybrid Layer</title>
     <meta charset="utf-8" />
 
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
@@ -20,5 +20,11 @@
     <div id="map"></div>
     <button id="playButton">Play</button>
     <div id="slider"></div>
+    <div id="info" class="leaflet-container">
+        <div>Hybrid Layer is used to show history of OpenStreetMap edits.</div>
+        <div>Idea, data and style are taken from Mapbox <a target="_blank" href="https://www.mapbox.com/ten-years-openstreetmap">10 Years of OpenStreetMap</a> example.</div>
+        <a id="info-trigger" href="javascript:void(0)">Details</a>
+        <div id="info-details">Instead of 9 files for each tile in original example, only 2 are needed to load for Hybrid Layer. Furthermore, palette can be easily changed without rendering new tiles.</div>
+    </div>
 </body>
 </html>

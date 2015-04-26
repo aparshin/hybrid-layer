@@ -3,9 +3,39 @@ html, body, #map {
     margin: 0;
 }
 
-#slider {
+.hybrid-control {
+    padding: 6px;
+
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    background: #fff;
+    border-radius: 5px;
+}
+
+#slider-container {
     position: absolute;
-    width: 500px;
+    bottom: 10px;
+    left: 10px;
+}
+
+#slider {
+    width: 300px;
+    vertical-align: middle;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+#slider.ui-widget-content {
+    background-color: rgb(200, 200, 255);
+    background-image: none;
+}
+
+#map {
+    cursor: default;
+}
+
+#info {
+    position: absolute;
     top: 10px;
-    left: 50px;
+    right: 10px;
+    width: 400px;
 }
