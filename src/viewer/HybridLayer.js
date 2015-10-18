@@ -6,7 +6,8 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
         },
         sortFunc: function(a, b) {
             return a - b;
-        }
+        },
+        infoFile: null
     },
 
     initialize: function (url, options) {
@@ -28,10 +29,15 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
             delete this._tileViewers[id];
         }, this);
 
+        this.initPromise = $.Deferred();
+
         if (this.options.infoFile) {
             $.getJSON(this.options.infoFile).then(function(info) {
                 this.objectsInfo = info;
+                this.initPromise.resolve();
             }.bind(this))
+        } else {
+            this.initPromise.resolve();
         }
     },
 

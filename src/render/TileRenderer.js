@@ -17,8 +17,9 @@ TileRenderer.prototype.addObject = function(ctx, id, options) {
         data = ctx.getImageData(0, 0, 256, 256).data,
         cache = [];
 
-    //TODO: check that new id is not already in array
-    this.objs.push(id);
+    if (this.objs.indexOf(id) === -1) {
+        this.objs.push(id);
+    }
     
     for (var p = 0; p < 256*256; p++) {
         if (data[4*p+3] < minAlpha || data[4*p+3] >= maxAlpha) {
@@ -28,13 +29,17 @@ TileRenderer.prototype.addObject = function(ctx, id, options) {
         var prevIndex = this.buf[p];
         this.debugHist[prevIndex]--;
         if (!cache[prevIndex]) {
-            //TODO: check that new id is not already in array
-            var newSet = this.indexes[prevIndex].concat([id]),
+            var newIndex;
+
+            if (this.indexes[prevIndex].indexOf(id) === -1) {
+                var newSet = this.indexes[prevIndex].concat([id]);
+
                 newIndex = this.indexes.length;
-                
-            this.indexes.push(newSet);
-            this.buf[p] = newIndex;
-            
+                this.indexes.push(newSet);
+            } else {
+                newIndex = prevIndex;
+            }
+
             cache[prevIndex] = newIndex;
         }
         

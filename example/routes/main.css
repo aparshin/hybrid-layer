@@ -1,0 +1,49 @@
+html, body, #map {
+    height: 100%;
+    margin: 0;
+}
+
+.hybrid-control {
+    padding: 6px;
+
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    background: #fff;
+    border-radius: 5px;
+}
+
+#slider-container {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+}
+
+#slider {
+    width: 300px;
+    vertical-align: middle;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+#slider.ui-widget-content {
+    background-color: rgb(200, 200, 255);
+    background-image: none;
+}
+
+#map {
+    cursor: default;
+}
+
+#hover-info {
+    position: absolute;
+    top: 10px;
+    left: 50px;
+    width: 400px;
+    background: white;
+}
+
+#type-filter {
+   position: absolute;
+   bottom: 10px;
+   right: 10px; 
+   max-width: 700px;
+}
