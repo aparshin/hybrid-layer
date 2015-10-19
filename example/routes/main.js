@@ -38,7 +38,10 @@ var RouteListWidget = function(objectsInfo, container, map) {
 RouteListWidget.prototype = {
     _uiTemplate: Handlebars.compile(
         '{{#routes}}' +
-            '<div class="route-list-item" data-id={{id}}>{{ref}}, {{name}} ({{type}})</div>' +
+            '<div class="route-list-item" data-id={{id}}>' +
+                '<div class="route-list-title">{{ref}}, {{name}} ({{type}})</div>' +
+                '<div class="route-list-item-info"></div>' +
+            '</div>' +
         '{{/routes}}'
     ),
     showObjects: function(objs) {
@@ -61,16 +64,38 @@ RouteListWidget.prototype = {
             var id = $(this).data('id'),
                 objBounds = _this._objs[id].bounds;
             _this._map.fitBounds(L.GeoJSON.coordsToLatLngs(objBounds));
-            // _this.showObjects([id]);
+            $(_this).trigger('selectitem', id);
+            container.find('.route-list-item-info').empty();
+            var infoPlaceholder = $(this).find('.route-list-item-info');
+            new RouteInfoWidget(_this._objs[id], infoPlaceholder);
         }).on('mouseover', function() {
             $(_this).trigger('highlightitem', $(this).data('id'));
         });
     }
 }
 
+var RouteInfoWidget = function(routeInfo, container) {
+    routeInfo = $.extend({}, routeInfo);
+    delete routeInfo.bounds;
+    delete routeInfo.id;
+    delete routeInfo.type;
+
+    container.empty();
+    $(this._uiTemplate({tags: routeInfo})).appendTo(container);
+}
+
+RouteInfoWidget.prototype = {
+    _uiTemplate: Handlebars.compile(
+        '<div>{{#each tags}}' +
+            '<div>{{@key}}: {{this}}</div>' +
+        '{{/each}}</div>'
+    )
+}
+
 $(function() {
     var opacity = 0.4,
         opacityHash = [];
+
     $('#slider').slider({
         min: 0,
         max: 1,
@@ -84,7 +109,8 @@ $(function() {
     });
 
     var activeObjs = {},
-        activeObjsArray = [];
+        activeObjsArray = [],
+        selectedObj;
 
     /* var colorFunc = function(i){
         var g = i in activeObjs ? 255 : 0;
@@ -102,7 +128,10 @@ $(function() {
         }
 
         for (var i = 0; i < objs.length; i++) {
-            if (objs[i] in activeObjs) {
+            var obj = objs[i];
+            if (obj === selectedObj) {
+                return [255, 0, 0, totalOpacity];
+            } else if (obj in activeObjs) {
                 return [255, 0, 255, totalOpacity];
             }
         }
@@ -134,8 +163,10 @@ $(function() {
             activeObjs[objId] = true;
 
             activeLayer.redrawFast();
-            console.log(activeObjsArray, activeObjs);
-        })
+        }).on('selectitem', function(e, objId) {
+            selectedObj = objId;
+            activeLayer.redrawFast();
+        });
 
         activeLayer.addTo(map);
 
