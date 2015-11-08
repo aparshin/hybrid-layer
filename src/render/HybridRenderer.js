@@ -63,10 +63,15 @@ Bounds.prototype.intersects = function(bounds) {
            this.max[1] >= bounds.min[1] && bounds.max[1] >= this.min[1];
 }
 
-var HybridRenderer = function(geoJSON) {
+var HybridRenderer = function(geoJSON, canvasOptions) {
     var tmpCanvas = new Canvas(256, 256);
     this._drawContext = tmpCanvas.getContext('2d');
 
+    canvasOptions = canvasOptions || {};
+    for (var o in canvasOptions) {
+        this._drawContext[o] = canvasOptions[o];
+    }
+    
     this.features = [];
     this._mercProj = proj4('EPSG:3857');
     this._filters = [];
