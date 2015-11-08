@@ -191,7 +191,7 @@ $(function() {
         return [0, 0, 255, totalOpacity];
     }
 
-    var map = L.map('map', {center: [-27.6, 134.824], zoom: 4, maxZoom: 17});
+    var map = L.map('map', {center: [55.7362, 37.6069], zoom: 11, maxZoom: 17});
     L.hash(map);
 
     var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
