@@ -1,7 +1,10 @@
+"use strict";
+
 var TILES_PREFIX = 'http://localhost/maps/render_routes/';
 
 var TypeFilterWidget = function(objectsInfo, container) {
     this._types = {};
+    this._objectsInfo = objectsInfo;
     for (var i = 0; i < objectsInfo.length; i++) {
         var type = objectsInfo[i].route;
         if (type) {
@@ -14,18 +17,55 @@ var TypeFilterWidget = function(objectsInfo, container) {
         uiButtons.push({type: t});
     }
 
+    this._visibleObjects = {};
+    this._calculateVisibleObjects();
+
     container.empty().append($(this._uiTemplate({buttons: uiButtons})));
 
-    container.find('input').button();
+    var _this = this;
+    container.find('input').button().click(function() {
+        var type = $(this).data('routetype');
+
+        if (type) {
+            _this._types[type] = this.checked;
+        } else {
+            var state = this.id === 'routetype-all';
+            for (var t in _this._types) {
+                _this._types[t] = state;
+            }
+            container.find('[data-routetype]')
+                .prop('checked', state)
+                .button('refresh');
+        }
+        _this._calculateVisibleObjects(); 
+        $(_this).change();
+    });
 
     this._info = objectsInfo;
 }
 
 TypeFilterWidget.prototype = {
-    _uiTemplate: Handlebars.compile('{{#buttons}}' + 
-        '<input type="checkbox" id="{{type}}"><label for="{{type}}">{{type}}</label>' +
-    '{{/buttons}}'),
-    filterObjects:  function(objects) {
+    _uiTemplate: Handlebars.compile(
+        '{{#buttons}}' + 
+            '<input data-routetype={{type}} checked type="checkbox" id="{{type}}"><label for="{{type}}">{{type}}</label>' +
+        '{{/buttons}}' +
+        '<input type="button" id="routetype-none" class="routetype-meta" value="None">' +
+        '<input type="button" id="routetype-all" class="routetype-meta" value="All">'
+    ),
+
+    _calculateVisibleObjects: function() {
+        this._visibleObjects = {};
+        
+        for (var i = 0; i < this._objectsInfo.length; i++) {
+            var type = this._objectsInfo[i].route;
+            if (this._types[type]) {
+                this._visibleObjects[i] = true;
+            }
+        }
+    },
+
+    getVisibleObjects: function() {
+        return this._visibleObjects;
     }
 }
 
@@ -110,7 +150,8 @@ $(function() {
 
     var activeObjs = {},
         activeObjsArray = [],
-        selectedObj;
+        selectedObj,
+        visibleObjs = {};
 
     /* var colorFunc = function(i){
         var g = i in activeObjs ? 255 : 0;
@@ -122,18 +163,29 @@ $(function() {
         if (!len) {
             return [0, 0, 0, 0];
         }
-        var totalOpacity = opacityHash[len];
-        if (!totalOpacity) {
-            totalOpacity = opacityHash[len] = 1 - Math.pow(1 - opacity, len);
-        }
+
+        var count = 0;
 
         for (var i = 0; i < objs.length; i++) {
             var obj = objs[i];
-            if (obj === selectedObj) {
-                return [255, 0, 0, totalOpacity];
-            } else if (obj in activeObjs) {
-                return [255, 0, 255, totalOpacity];
+            if (!(obj in visibleObjs)) {
+                continue;
             }
+
+            count++;
+
+            if (obj === selectedObj) {
+                 return [255, 0, 0, 1.0];
+            } else if (obj in activeObjs) {
+                return [255, 0, 255, 1.0];
+            }
+        }
+        if (!count) {
+            return [0, 0, 0, 0];
+        }
+        var totalOpacity = opacityHash[count];
+        if (!totalOpacity) {
+            totalOpacity = opacityHash[count] = 1 - Math.pow(1 - opacity, count);
         }
         return [0, 0, 255, totalOpacity];
     }
@@ -157,6 +209,13 @@ $(function() {
         var typeFilterWidget = new TypeFilterWidget(trackLayer.objectsInfo, $('#type-filter'));
         var routeListWidget = new RouteListWidget(trackLayer.objectsInfo, $('#hover-info'), map);
 
+        $(typeFilterWidget).change(function() {
+            visibleObjs = typeFilterWidget.getVisibleObjects();
+            trackLayer.redrawFast();
+        });
+
+        visibleObjs = typeFilterWidget.getVisibleObjects();
+
         $(routeListWidget).on('highlightitem', function(e, objId) {
             activeObjsArray = [objId];
             activeObjs = {};
@@ -172,6 +231,9 @@ $(function() {
 
         map.on('mousemove', function(e) {
             var objs = activeLayer.getObjects(e.latlng, 4);
+            objs = objs.filter(function(objID) {
+                return objID in visibleObjs;
+            });
 
             var changed = true;
             if (objs.length === activeObjsArray.length) {
@@ -198,6 +260,9 @@ $(function() {
 
         map.on('click', function(e) {
             var objs = activeLayer.getObjects(e.latlng, 4);
+            objs = objs.filter(function(objID) {
+                return objID in visibleObjs;
+            });
 
             routeListWidget.showObjects(objs);
         });

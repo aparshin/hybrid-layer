@@ -48,6 +48,30 @@ html, body, #map {
    max-width: 700px;
 }
 
+#type-filter .ui-button {
+    background-color: white;
+    background-image: none;
+    border-radius: 0px;
+    border: 1px solid grey;
+}
+
+#type-filter .ui-button-text, #type-filter input.ui-button {
+    padding: 0.2em 0.5em;
+}
+
+#type-filter .ui-state-default.ui-state-active .ui-button-text,
+#type-filter input.ui-button {
+    color: #222222;
+}
+
+#type-filter .ui-state-default .ui-button-text {
+    color: #AAAAAA;
+}
+
+#type-filter .ui-button.routetype-meta {
+    background-color: yellow; 
+}
+
 .route-list-item {
     border: 1px solid grey;
     margin: 3px;
