@@ -1,6 +1,7 @@
 "use strict";
 
-var TILES_PREFIX = 'http://localhost/maps/render_routes/';
+var TILES_PREFIX = 'http://aparshin.ru/maps/routes/';
+// var TILES_PREFIX = 'http://localhost/maps/render_routes/';
 
 var TypeFilterWidget = function(objectsInfo, container) {
     this._types = {};
@@ -200,7 +201,7 @@ $(function() {
     var trackLayer = new L.HybridLayer(TILES_PREFIX + '{z}_{x}_{y}', {
         // colorFunc: colorFunc,
         indexFunc: indexFunc,
-        infoFile: 'tags.json'
+        infoFile: 'http://aparshin.ru/maps/routes/tags.json'
     });
 
     var activeLayer = trackLayer;

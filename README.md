@@ -12,6 +12,7 @@ This repository contains an implementation of server renderer and client-side vi
 
 ## Examples
   * [Australia and Oceania OSM GPS Tracks](https://aparshin.github.io/hybrid-layer/example)
+  * [OSM "route" relations in Moscow](https://aparshin.github.io/hybrid-layer/example/routes)
   * [10 years of OSM edits](https://aparshin.github.io/hybrid-layer/example/osm_history) (idea and data from the [Mapbox example](https://www.mapbox.com/ten-years-openstreetmap))
 
 ## Format

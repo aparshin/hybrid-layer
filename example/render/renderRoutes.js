@@ -6,9 +6,9 @@ var HybridRenderer = require('../../src/render/HybridRenderer.js'),
 
 
 var MAX_ZOOM = 17,
-    CHUNK_SIZE = 10000;
+    CHUNK_SIZE = 5000;
 
-var parsedRoutes = JSON.parse(fs.readFileSync('res.txt'));
+var parsedRoutes = JSON.parse(fs.readFileSync('res.txt'))/*.slice(0, 1000)*/;
 
 var count = 0,
     properties = [];
@@ -27,13 +27,13 @@ var renderChunk = function() {
         })
     }
 
-    var hybridRenderer = new HybridRenderer(geoJSON);
-    var properties = hybridRenderer.features.map(function(feature) {
+    var hybridRenderer = new HybridRenderer(geoJSON, {lineWidth: 2});
+    /*var properties = hybridRenderer.features.map(function(feature) {
         feature.properties.bounds = feature.bounds;
         return feature.properties;
     });
     fs.writeFileSync('info.txt', JSON.stringify(properties));
-    return;
+    return;*/
 
     hybridRenderer.render({
         maxZoom: MAX_ZOOM,
