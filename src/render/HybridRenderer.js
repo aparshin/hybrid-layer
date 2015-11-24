@@ -6,8 +6,6 @@ var TileRenderer = require('./TileRenderer.js'),
 
     
 var WORLD_SIZE = proj4('EPSG:3857').forward([180, 0])[0]*2;
-    // MAX_DISTANCE = 100000,
-    // MIN_POINTS = 10;
 
 var renderRingToTile = function(ctx, tilePos, coords, isPoly) {
     var pixelSize = WORLD_SIZE / Math.pow(2, tilePos.z + 8);
@@ -63,18 +61,20 @@ Bounds.prototype.intersects = function(bounds) {
            this.max[1] >= bounds.min[1] && bounds.max[1] >= this.min[1];
 }
 
-var HybridRenderer = function(geoJSON, canvasOptions) {
+var HybridRenderer = function(geoJSON, options) {
     var tmpCanvas = new Canvas(256, 256);
     this._drawContext = tmpCanvas.getContext('2d');
 
-    canvasOptions = canvasOptions || {};
-    for (var o in canvasOptions) {
-        this._drawContext[o] = canvasOptions[o];
+    options = options || {};
+
+    var drawOptions = options.drawOptions || {};
+    for (var o in options) {
+        this._drawContext[o] = drawOptions[o];
     }
     
     this.features = [];
     this._mercProj = proj4('EPSG:3857');
-    this._filters = [];
+    this._filters = options.filters || [];
     this._parseGeom(geoJSON);
 }
 // predicate receives array of coordinates in Mercator projection
@@ -110,9 +110,6 @@ HybridRenderer.prototype._parseGeometryCollection = function(geomObjects, proper
         }
 
         for (var c = 0; c < coords.length; c++) {
-            /* if (coords[c].length < MIN_POINTS) {
-                continue;
-            } */
 
             var gmerc = coords[c].map(function(p, index) {
                 var pm = mercProj.forward(p);
@@ -122,16 +119,6 @@ HybridRenderer.prototype._parseGeometryCollection = function(geomObjects, proper
             var skip = !!_.find(this._filters, function(filter) {
                 return !filter(gmerc);
             });
-
-            /* var skip = false;
-            for (var p = 1; p < gmerc.length; p++) {
-                if (Math.abs(gmerc[p-1][0] - gmerc[p][0]) > MAX_DISTANCE ||
-                    Math.abs(gmerc[p-1][1] - gmerc[p][1]) > MAX_DISTANCE)
-                {
-                    skip = true;
-                    break;
-                }
-            }*/
 
             if (!skip) {
                 var bounds = new Bounds(gmerc);

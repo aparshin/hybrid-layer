@@ -1,13 +1,14 @@
 {
-    "dependencies": {
-        "canvas": "~1.2.1",
-        "proj4": "~2.3.3",
-        "q": "~1.2.0",
-        "glob": "~4.4.1",
-        "request": "~2.53.0",
-        "handlebars": "~3.0.0",
-        "xz": "~1.1.1",
-        "tar": "~2.0.0",
-        "underscore": "~1.8.3"
-    }
+  "dependencies": {
+    "canvas": "~1.2.1",
+    "glob": "~4.4.1",
+    "handlebars": "~3.0.0",
+    "proj4": "~2.3.3",
+    "q": "~1.2.0",
+    "request": "~2.53.0",
+    "tar": "~2.0.0",
+    "underscore": "~1.8.3",
+    "xml2js": "^0.4.15",
+    "xz": "~1.1.1"
+  }
 }

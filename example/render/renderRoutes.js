@@ -27,7 +27,11 @@ var renderChunk = function() {
         })
     }
 
-    var hybridRenderer = new HybridRenderer(geoJSON, {lineWidth: 2});
+    var hybridRenderer = new HybridRenderer(geoJSON, {
+        drawOptions: {
+            lineWidth: 2
+        }
+    });
     /*var properties = hybridRenderer.features.map(function(feature) {
         feature.properties.bounds = feature.bounds;
         return feature.properties;
