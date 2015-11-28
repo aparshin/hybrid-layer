@@ -9,6 +9,7 @@
     "tar": "~2.0.0",
     "underscore": "~1.8.3",
     "xml2js": "^0.4.15",
-    "xz": "~1.1.1"
+    "xz": "~1.1.1",
+    "gpstracks": "aparshin/gpstracks"
   }
 }

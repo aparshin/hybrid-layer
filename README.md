@@ -11,9 +11,9 @@ Hybrid layers allow the following manipulations on the client side:
 This repository contains an implementation of server renderer and client-side viewer.
 
 ## Examples
-  * [Australia and Oceania OSM GPS Tracks](https://aparshin.github.io/hybrid-layer/example)
-  * [OSM "route" relations in Moscow](https://aparshin.github.io/hybrid-layer/example/routes)
-  * [10 years of OSM edits](https://aparshin.github.io/hybrid-layer/example/osm_history) (idea and data from the [Mapbox example](https://www.mapbox.com/ten-years-openstreetmap))
+  * [Australia and Oceania OSM GPS Tracks](https://aparshin.github.io/hybrid-layer/examples/tracks)
+  * [OSM "route" relations in Moscow](https://aparshin.github.io/hybrid-layer/examples/routes)
+  * [10 years of OSM edits](https://aparshin.github.io/hybrid-layer/examples/osm_history) (idea and data from the [Mapbox example](https://www.mapbox.com/ten-years-openstreetmap))
 
 ## Format
 

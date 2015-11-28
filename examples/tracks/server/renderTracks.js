@@ -1,5 +1,5 @@
-var TrackParserManager = require('../../../gpstracks/TrackParserManager.js'),
-    HybridRenderer = require('../../src/render/HybridRenderer.js'),
+var TrackParserManager = require('gpstracks/TrackParserManager.js'),
+    HybridRenderer = require('../../../src/render/HybridRenderer.js'),
     fs = require('fs'),
     xz = require('xz'),
     tar = require('tar'),
@@ -12,12 +12,11 @@ var TrackParserManager = require('../../../gpstracks/TrackParserManager.js'),
 var gpxFile = './data/australia-oceania.tar.xz',
 // var gpxFile = './data/central-america.tar.xz',
 // var gpxFile = './data/test.tar.xz',
-    metadataFile = './metadata.xml',
+    metadataFile = './data/metadata.xml',
     META_FILENAME_PREFIX = 'gpx-planet-2013-04-09/',
     CHUNK_SIZE = 200,
-    MAX_TRACKS = 0,
+    MAX_TRACKS = 200,
     MAX_ZOOM = 10,
-
     MAX_DISTANCE = 100000,
     MIN_POINTS = 10;
 

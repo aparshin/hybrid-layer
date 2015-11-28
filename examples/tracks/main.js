@@ -46,8 +46,8 @@ $(function() {
     var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
         attribution: 'Data © <a href="http://osm.org/about/" target="_blank">OpenStreetMap</a> contributors'
     }).addTo(map);
-    // var trackLayer = new L.HybridLayer('http://localhost/maps/rendert3/{z}_{x}_{y}', {
-    var trackLayer = new L.HybridLayer('http://aparshin.ru/maps/tracks4/{z}_{x}_{y}', {
+    var trackLayer = new L.HybridLayer('http://localhost/maps/tracks4/{z}_{x}_{y}', {
+    // var trackLayer = new L.HybridLayer('http://aparshin.ru/maps/tracks4/{z}_{x}_{y}', {
         colorFunc: colorFunc,
         indexFunc: indexFunc,
         infoFile: 'http://aparshin.ru/maps/tracks4/filenames.js'

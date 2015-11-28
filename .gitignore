@@ -1,5 +1,8 @@
+examples/routes/server/data
+examples/osm_history/server/history_img
+examples/tracks/server/data
+examples/tracks/server/result
+examples/spot5/server/data
 node_modules
 *.swp
 *.swo
-example/render/data
-example/render/result
