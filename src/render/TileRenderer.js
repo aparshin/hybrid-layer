@@ -1,4 +1,4 @@
-var Canvas = require('../../../node-canvas'),
+var Canvas = require('canvas'),
     Q = require('q'),
     fs = require('fs');
 
