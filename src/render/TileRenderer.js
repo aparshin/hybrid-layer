@@ -96,15 +96,9 @@ TileRenderer.prototype.analyze = function() {
     // console.log('Number of pixels: ', hist2);
 }
 
-TileRenderer.prototype.saveToFiles = function(prefix, skipOptimization) {
-
-    skipOptimization || this.removeNotUsed();
-
-    var pngFD = fs.openSync(prefix + '_img.png', 'w'),
-        canvas = new Canvas(256, 256),
+TileRenderer.prototype.getPNGStream = function() {
+    var canvas = new Canvas(256, 256),
         ctx = canvas.getContext('2d');
-
-    var def = Q.defer();
 
     var dataInfo = ctx.getImageData(0, 0, 256, 256);
     var uint8Buf = new Uint8Array(this.buf.buffer);
@@ -116,7 +110,16 @@ TileRenderer.prototype.saveToFiles = function(prefix, skipOptimization) {
 
     ctx.putImageData(dataInfo, 0, 0);
 
-    var stream = canvas.pngStream();
+    return canvas.pngStream();
+}
+
+TileRenderer.prototype.saveToFiles = function(prefix, skipOptimization) {
+
+    skipOptimization || this.removeNotUsed();
+
+    var pngFD = fs.openSync(prefix + '_img.png', 'w'),
+        def = Q.defer(),
+        stream = this.getPNGStream();
 
     stream.on('data', function(chunk){
         fs.writeSync(pngFD, chunk, null, chunk.length);

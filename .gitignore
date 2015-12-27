@@ -1,4 +1,5 @@
 examples/routes/server/data
+examples/routes/server/result
 examples/osm_history/server/history_img
 examples/tracks/server/data
 examples/tracks/server/result

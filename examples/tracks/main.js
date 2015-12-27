@@ -42,12 +42,13 @@ $(function() {
         return [0, 0, 255, totalOpacity];
     }
 
-    var map = L.map('map', {center: [-27.6, 134.824], zoom: 4, maxZoom: 10});
+    var map = L.map('map', {center: [-27.6, 134.824], zoom: 4, maxZoom: 17});
     var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
         attribution: 'Data © <a href="http://osm.org/about/" target="_blank">OpenStreetMap</a> contributors'
     }).addTo(map);
     // var trackLayer = new L.HybridLayer('http://localhost/maps/tracks4/{z}_{x}_{y}', {
-    var trackLayer = new L.HybridLayer('http://aparshin.ru/maps/tracks4/{z}_{x}_{y}', {
+    // var trackLayer = new L.HybridLayer('http://aparshin.ru/maps/tracks4/{z}_{x}_{y}', {
+    var trackLayer = new L.HybridLayer('http://localhost:3000/tracks/{z}/{x}/{y}', {
         colorFunc: colorFunc,
         indexFunc: indexFunc,
         infoFile: 'http://aparshin.ru/maps/tracks4/filenames.js'

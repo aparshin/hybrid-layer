@@ -7,6 +7,7 @@ var fs = require('fs'),
 
 // var osmFile = './data/asti_italy.osm.tar.xz',
 var osmFile = './data/moscow_russia.osm.tar.xz',
+// var osmFile = './data/verona_italy.osm.tar.xz',
     CHUNK_SIZE = 200,
     MAX_TRACKS = 0,
     MAX_ZOOM = 10;

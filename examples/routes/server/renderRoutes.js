@@ -1,4 +1,4 @@
-var HybridRenderer = require('../../src/render/HybridRenderer.js'),
+var HybridRenderer = require('../../../src/render/HybridRenderer.js'),
     fs = require('fs'),
     Q = require('q'),
     path = require('path'),
@@ -6,9 +6,9 @@ var HybridRenderer = require('../../src/render/HybridRenderer.js'),
 
 
 var MAX_ZOOM = 17,
-    CHUNK_SIZE = 5000;
+    CHUNK_SIZE = 1000;
 
-var parsedRoutes = JSON.parse(fs.readFileSync('res.txt'))/*.slice(0, 1000)*/;
+var parsedRoutes = JSON.parse(fs.readFileSync('relations.json'));/*.slice(0, 30);*/
 
 var count = 0,
     properties = [];
@@ -18,13 +18,17 @@ var renderChunk = function() {
     var chunk = parsedRoutes.splice(0, CHUNK_SIZE);
     var geoJSON = {
         type: 'FeatureCollection',
-        features: chunk.map(function(route) {
-            return {
-                type: 'Feature',
-                geometry: route.geoJSON,
-                properties: _.extend({}, route.tags, {id: route.id})
-            }
-        })
+        features: chunk
+            .filter(function(route) {
+                return route.geoJSON.coordinates.length;
+            })
+            .map(function(route) {
+                return {
+                    type: 'Feature',
+                    geometry: route.geoJSON,
+                    properties: _.extend({}, route.tags, {id: route.id})
+                }
+            })
     }
 
     var hybridRenderer = new HybridRenderer(geoJSON, {
@@ -47,12 +51,18 @@ var renderChunk = function() {
         count += hybridRenderer.features.length;
 
         properties = properties.concat(hybridRenderer.features.map(function(feature) {
-            feature.properties.bounds = feature.bounds;
-            return feature.properties;
+            feature.tags.bounds = {
+                min: feature.min,
+                max: feature.max
+            };
+
+            return feature.tags;
+            // feature.properties.bounds = feature.bounds;
+            // return feature.properties;
         }));
 
         if (parsedRoutes.length === 0) {
-            fs.writeFileSync('info.txt', JSON.stringify(properties));
+            fs.writeFileSync('tags.json', JSON.stringify(properties));
         } else {
             renderChunk();
         }

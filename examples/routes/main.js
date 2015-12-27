@@ -1,6 +1,8 @@
 "use strict";
 
-var TILES_PREFIX = 'http://aparshin.ru/maps/routes/';
+var TILES_PREFIX = 'http://localhost:3000/routes/';
+// var TILES_PREFIX = 'server/result/';
+// var TILES_PREFIX = 'http://aparshin.ru/maps/routes/';
 // var TILES_PREFIX = 'http://localhost/maps/render_routes/';
 
 var TypeFilterWidget = function(objectsInfo, container) {
@@ -103,8 +105,10 @@ RouteListWidget.prototype = {
 
         container.find('.route-list-item').click(function() {
             var id = $(this).data('id'),
-                objBounds = _this._objs[id].bounds;
-            _this._map.fitBounds(L.GeoJSON.coordsToLatLngs(objBounds));
+                objBounds = _this._objs[id].bounds,
+                min = L.CRS.EPSG3857.pointToLatLng({x: objBounds.min[0]*256, y: objBounds.min[1]*256}, 0),
+                max = L.CRS.EPSG3857.pointToLatLng({x: objBounds.max[0]*256, y: objBounds.max[1]*256}, 0);
+            _this._map.fitBounds(L.latLngBounds(min, max));
             $(_this).trigger('selectitem', id);
             container.find('.route-list-item-info').empty();
             var infoPlaceholder = $(this).find('.route-list-item-info');
@@ -198,10 +202,11 @@ $(function() {
         attribution: 'Data © <a href="http://osm.org/about/" target="_blank">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    var trackLayer = new L.HybridLayer(TILES_PREFIX + '{z}_{x}_{y}', {
+    var trackLayer = new L.HybridLayer(TILES_PREFIX + '{z}/{x}/{y}', {
         // colorFunc: colorFunc,
         indexFunc: indexFunc,
-        infoFile: 'http://aparshin.ru/maps/routes/tags.json'
+        // infoFile: 'http://aparshin.ru/maps/routes/tags.json'
+        infoFile: 'server/tags.json'
     });
 
     var activeLayer = trackLayer;

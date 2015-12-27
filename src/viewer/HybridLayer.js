@@ -65,8 +65,8 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
             );
 
         var tileViewer = new HybridTileViewer(
-            prefix + '_img.png', 
-            prefix + '_info.txt', 
+            prefix + '.png', 
+            prefix + '.txt', 
             {objectsManager: this._objectsManager}
         );
 

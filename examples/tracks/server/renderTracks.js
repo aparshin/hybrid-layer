@@ -8,16 +8,19 @@ var TrackParserManager = require('gpstracks/TrackParserManager.js'),
     xmlParser = require('xml2js'),
     _ = require('underscore');
 
+// var heapdump = require('heapdump');
+
 
 var gpxFile = './data/australia-oceania.tar.xz',
 // var gpxFile = './data/central-america.tar.xz',
 // var gpxFile = './data/test.tar.xz',
     metadataFile = './data/metadata.xml',
     META_FILENAME_PREFIX = 'gpx-planet-2013-04-09/',
+    // CHUNK_SIZE = 200,
     CHUNK_SIZE = 200,
-    MAX_TRACKS = 0,
-    MAX_ZOOM = 10,
-    MAX_DISTANCE = 100000,
+    MAX_TRACKS = 2000,
+    MAX_ZOOM = 17,
+    MAX_DISTANCE = 1/500, //about 800 Mercator kilometers
     MIN_POINTS = 10;
 
 
@@ -51,15 +54,17 @@ var parseMetadata = function(result) {
     })
 };
 
-var fewPointsFilter = function(gmerc) {
-    var isNormal = gmerc.length >= MIN_POINTS;
+var fewPointsFilter = function(feature) {
+    // console.log(feature);
+    var isNormal = feature.geometry[0].length >= MIN_POINTS;
 
     isNormal || console.log('Filter: few points');
 
     return isNormal;
 }
 
-var longTrackFilter = function(gmerc) {
+var longTrackFilter = function(feature) {
+    var gmerc = feature.geometry[0];
     for (var p = 1; p < gmerc.length; p++) {
         if (Math.abs(gmerc[p-1][0] - gmerc[p][0]) > MAX_DISTANCE ||
             Math.abs(gmerc[p-1][1] - gmerc[p][1]) > MAX_DISTANCE)
@@ -77,11 +82,27 @@ var parseAndRenderTracks = function() {
     trackParserManager.process().done(function(tracks) {
         var geoJSON = {
             type: 'FeatureCollection', 
-            features: tracks.map(function(track){
+            features: _.flatten(tracks.map(function(track){
                 track.geoJSON.properties = {filename: track.filename};
-                return track.geoJSON;
-            })
+                if (track.geoJSON.geometry.type === 'LineString') {
+                    return track.geoJSON;
+                } else { //MultiLineString
+                    //handle track parts as separate objects
+                    return track.geoJSON.geometry.coordinates.map(function(coords) {
+                        return {
+                            type: 'Feature',
+                            properties: _.clone(track.geoJSON.properties),
+                            geometry: {
+                                type: 'LineString',
+                                coordinates: coords
+                            }
+                        }
+                    })
+                }
+            }))
         };
+
+        tracks = null;
 
         var hybridRenderer = new HybridRenderer(geoJSON, {
             filters: [fewPointsFilter, longTrackFilter]
@@ -94,7 +115,7 @@ var parseAndRenderTracks = function() {
         }).done(function() {
             geomsCount += hybridRenderer.features.length;
             filenames = filenames.concat(hybridRenderer.features.map(function(feature) {
-                return gpxProperties[feature.properties.filename];
+                return gpxProperties[feature.tags.filename];
             }))
             def.resolve();
         })
@@ -126,6 +147,7 @@ xmlParser.parseString(fs.readFileSync(metadataFile), function(err, result) {
             if (chunkCount === CHUNK_SIZE) {
                 tarParser.pause();
                 parseAndRenderTracks().done(function() {
+                    // heapdump.writeSnapshot();
                     console.log('resume', count, MAX_TRACKS);
                     chunkCount = 0;
                     if (MAX_TRACKS && count >= MAX_TRACKS) {
