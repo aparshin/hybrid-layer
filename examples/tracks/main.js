@@ -51,12 +51,11 @@ $(function() {
     var trackLayer = new L.HybridLayer('http://localhost:3000/tracks/{z}/{x}/{y}', {
         colorFunc: colorFunc,
         indexFunc: indexFunc,
-        infoFile: 'http://aparshin.ru/maps/tracks4/filenames.js'
+        infoFile: 'http://localhost/hybridlayer/examples/tracks/server/result/filenames.js'
     });
     // var spotLayer = new L.HybridLayer('http://aparshin.ru/maps/render/{z}_{x}_{y}', {colorFunc: colorFunc});
     var activeLayer = trackLayer;
 
-    /*
     trackLayer.addRenderHook(function(canvas, tilePoint, zoom, tileViewer) {
         var ctx = canvas.getContext('2d');
         ctx.beginPath();
@@ -80,7 +79,6 @@ $(function() {
 
         ctx.fillText('Objects: ' + objsCount, 10, 60);
     })
-    */
 
     activeLayer.addTo(map);
 
@@ -92,6 +90,17 @@ $(function() {
     map.on('baselayerchange', function(e) {
         activeLayer = e.layer;
     });*/
+
+
+    activeLayer.initPromise.then(function() {
+        map.on('click', function(e) {
+            var objs = activeLayer.getObjects(e.latlng, 4);
+            var objsInfo = objs.map(function(index) {
+                return activeLayer.objectsInfo[index];
+            });
+            console.log(objsInfo);
+        })
+    })
 
     var activeObjs = {},
         activeObjsArray = [];

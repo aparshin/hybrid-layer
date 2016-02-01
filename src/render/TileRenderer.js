@@ -62,10 +62,7 @@ TileRenderer.prototype.removeNotUsed = function() {
     this.indexes = newIndexes;
 
     for (var p = 0; p < this.buf.length; p++){
-        var idx = this.buf[p];
-        if (dict[idx]) {
-             this.buf[p] = dict[idx];
-        }
+        this.buf[p] = dict[this.buf[p]];
     }
 }
 

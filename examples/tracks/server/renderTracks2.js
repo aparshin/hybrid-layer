@@ -21,8 +21,7 @@ var gpxFile = './data/australia-oceania.tar.xz',
 // var gpxFile = './data/test.tar.xz',
     metadataFile = './data/metadata.xml',
     META_FILENAME_PREFIX = 'gpx-planet-2013-04-09/',
-    // CHUNK_SIZE = 200,
-    CHUNK_SIZE = 100,
+    MAX_POINTS = 500000,
     MAX_TRACKS = 0,
     MAX_ZOOM = 17,
     MAX_DISTANCE = 1/500, //about 800 Mercator kilometers
@@ -80,53 +79,65 @@ var longTrackFilter = function(feature) {
     return true;
 }
 
-var parseAndRenderTracks = function() {
+var trackChunk = [],
+    trackChunkPoints = 0;
+
+var parseTracks = function() {
+    return trackParserManager.process().then(tracks => {
+        var points = 0;
+        var features = _.flatten(tracks.map(track => {
+            var geoJSON = track.geoJSON;
+            geoJSON.properties = {filename: track.filename};
+            if (geoJSON.geometry.type === 'LineString') {
+                points += geoJSON.geometry.coordinates.length;
+                return geoJSON;
+            } else { //MultiLineString
+                //handle track parts as separate objects
+                return geoJSON.geometry.coordinates.map(coords => {
+                    points += coords.length;
+                    return {
+                        type: 'Feature',
+                        properties: _.clone(geoJSON.properties),
+                        geometry: {
+                            type: 'LineString',
+                            coordinates: coords
+                        }
+                    }
+                })
+            }
+        }))
+        trackChunk = trackChunk.concat(features);
+        trackChunkPoints += points;
+    })
+}
+var renderTracks = function() {
     var def = new Q.defer();
 
-    trackParserManager.process().done(function(tracks) {
-        var geoJSON = {
-            type: 'FeatureCollection', 
-            features: _.flatten(tracks.map(function(track){
-                track.geoJSON.properties = {filename: track.filename};
-                if (track.geoJSON.geometry.type === 'LineString') {
-                    return track.geoJSON;
-                } else { //MultiLineString
-                    //handle track parts as separate objects
-                    return track.geoJSON.geometry.coordinates.map(function(coords) {
-                        return {
-                            type: 'Feature',
-                            properties: _.clone(track.geoJSON.properties),
-                            geometry: {
-                                type: 'LineString',
-                                coordinates: coords
-                            }
-                        }
-                    })
-                }
-            }))
-        };
+    var geoJSON = {
+        type: 'FeatureCollection',
+        features: trackChunk
+    }
 
-        tracks = null;
-
-        var hybridRenderer = new HybridRenderer(geoJSON, {
-            filters: [fewPointsFilter, longTrackFilter]
-        });
-
-        hybridRenderer.render({
-            maxZoom: MAX_ZOOM,
-            loadFromFiles: true,
-            indexShift: geomsCount
-        }).done(function() {
-            geomsCount += hybridRenderer.features.length;
-            filenames = filenames.concat(hybridRenderer.features.map(function(feature) {
-                return gpxProperties[feature.tags.filename];
-            }))
-            hybridRenderer = null;
-            fs.appendFileSync('memoryusage.txt', JSON.stringify(process.memoryUsage()));
-            // heapdump.writeSnapshot();
-            def.resolve();
-        })
+    var hybridRenderer = new HybridRenderer(geoJSON, {
+        filters: [fewPointsFilter, longTrackFilter]
     });
+
+    hybridRenderer.render({
+        maxZoom: MAX_ZOOM,
+        loadFromFiles: true,
+        indexShift: geomsCount
+    }).done(function() {
+        geomsCount += hybridRenderer.features.length;
+        filenames = filenames.concat(hybridRenderer.features.map(function(feature) {
+            return gpxProperties[feature.tags.filename];
+        }))
+        hybridRenderer = null;
+        gc();
+        fs.appendFileSync('memoryusage.txt', JSON.stringify(process.memoryUsage()));
+        // heapdump.writeSnapshot();
+        def.resolve();
+    })
+
     return def.promise;
 }
 
@@ -140,37 +151,39 @@ xmlParser.parseString(fs.readFileSync(metadataFile), function(err, result) {
             return;
         }
 
-        console.log('Decompressing ', e.path, e.size);
+        console.log(`Decompressing ${e.path} (${e.size >> 10} Kb)`);
         var buf = new Buffer(e.size),
             pos = 0;
         e.on('data', function(data) {
             data.copy(buf, pos);
             pos += data.length;
         }).on('end', function() {
-            console.log('Parsing ', e.path);
+            // console.log('Parsing ', e.path);
             trackParserManager.addTrack(e.path, buf);
+            tarParser.pause();
             count++;
-            chunkCount++;
-            if (chunkCount === CHUNK_SIZE) {
-                tarParser.pause();
-                parseAndRenderTracks().done(function() {
-                    // heapdump.writeSnapshot();
-
-                    console.log('resume', count, MAX_TRACKS);
-                    chunkCount = 0;
-                    if (MAX_TRACKS && count >= MAX_TRACKS) {
-                        console.log('destroy', count);
-                        rawStream.removeAllListeners('entry');
-                        inFile.destroy();
-                        fs.writeFileSync('./result/filenames.js', JSON.stringify(filenames));
-                        //heapdump.writeSnapshot();
-                    }
+            parseTracks().done(() => {
+                console.log(`Tracks: ${count}, points: ${trackChunkPoints}`); 
+                if (MAX_TRACKS && count >= MAX_TRACKS) {
+                    console.log('destroy', count);
+                    rawStream.removeAllListeners('entry');
+                    inFile.destroy();
+                    fs.writeFileSync('./result/filenames.js', JSON.stringify(filenames));
+                    //heapdump.writeSnapshot();
+                }
+                if (trackChunkPoints >= MAX_POINTS) {
+                    renderTracks().done(() => {
+                        trackChunkPoints = 0;
+                        trackChunk = [];
+                        tarParser.resume();
+                    })
+                } else {
                     tarParser.resume();
-                });
-            }
+                }
+            })
         })
     }).on('end', function() {
-        parseAndRenderTracks().done(function() {
+        renderTracks().done(function() {
             fs.writeFileSync('./result/filenames.js', JSON.stringify(filenames));
         });
     })

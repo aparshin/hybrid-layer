@@ -1,12 +1,15 @@
 var TileRenderer = require('./TileRenderer.js'),
     Canvas = require('canvas'),
     Q = require('q'),
-    Bounds = require('./Bounds.js'),
     geojsonvt = require('geojson-vt'),
     fs = require('fs'),
     _ = require('underscore');
     
 var MIN_POINTS_IN_TILE = 5000;
+
+function toID(z, x, y) {
+    return (((1 << z) * y + x) * 32) + z;
+}
 
 var HybridRenderer = function(geoJSON, options) {
 
@@ -49,6 +52,11 @@ HybridRenderer.prototype.addRingFilter = function(predicate) {
 HybridRenderer.prototype._getTilePrefix = function(tilePos) {
     return this._targetDir + tilePos.z + '_' + tilePos.x + '_' + tilePos.y;
 
+}
+
+HybridRenderer.prototype.clearVT = function(tilePos) {
+    var id = toID(tilePos.z, tilePos.x, tilePos.y);
+    delete this._tileIndex.tiles[id]; 
 }
 
 HybridRenderer.prototype.renderTile = function(tilePos, options) {
@@ -94,7 +102,7 @@ HybridRenderer.prototype.renderTile = function(tilePos, options) {
         tile.max = [Math.max(tile.max[0], prevTile.max[0]), Math.max(tile.max[1], prevTile.max[1])];
     }
 
-    if (!alreadyRendered && tile.numPoints < MIN_POINTS_IN_TILE) {
+    if (!alreadyRendered && tile.numPoints < MIN_POINTS_IN_TILE && tilePos.z < this._maxZoom) {
         fs.writeFileSync(geomFileName, JSON.stringify(tile));
         return;
     }
@@ -122,6 +130,13 @@ HybridRenderer.prototype._processTile = function(options) {
     var tilePos = this._renderQueue.shift(),
         _this = this;
 
+    if (tilePos.action === 'clear') {
+        this.clearVT(tilePos);
+
+        setTimeout(this._processTile.bind(this, options), 0);
+        return;
+    }
+
     var renderOptions = {
         indexShift: options.indexShift
     }
@@ -142,15 +157,17 @@ HybridRenderer.prototype._processTile = function(options) {
         }
 
         tileRenderer.saveToFiles(filePrefix).then(function() {
+            _this._renderQueue.unshift({x: tilePos.x,   y: tilePos.y,   z: tilePos.z, action: 'clear'});
             if (tilePos.z < _this._maxZoom) {
-                _this._renderQueue.push({x: 2*tilePos.x,   y: 2*tilePos.y,   z: tilePos.z+1});
-                _this._renderQueue.push({x: 2*tilePos.x+1, y: 2*tilePos.y,   z: tilePos.z+1});
-                _this._renderQueue.push({x: 2*tilePos.x,   y: 2*tilePos.y+1, z: tilePos.z+1});
-                _this._renderQueue.push({x: 2*tilePos.x+1, y: 2*tilePos.y+1, z: tilePos.z+1});
+                _this._renderQueue.unshift({x: 2*tilePos.x,   y: 2*tilePos.y,   z: tilePos.z+1});
+                _this._renderQueue.unshift({x: 2*tilePos.x+1, y: 2*tilePos.y,   z: tilePos.z+1});
+                _this._renderQueue.unshift({x: 2*tilePos.x,   y: 2*tilePos.y+1, z: tilePos.z+1});
+                _this._renderQueue.unshift({x: 2*tilePos.x+1, y: 2*tilePos.y+1, z: tilePos.z+1});
             }
             setTimeout(_this._processTile.bind(_this, options), 0);
         });
     } else {
+        _this._renderQueue.unshift({x: tilePos.x, y: tilePos.y, z: tilePos.z, action: 'clear'});
         setTimeout(this._processTile.bind(this, options), 0);
     }
 }
