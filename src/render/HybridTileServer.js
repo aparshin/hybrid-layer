@@ -36,7 +36,7 @@ var getGeometry = function(z0, x0, y0) {
     console.log('getGeometry');
     return new Promise(function checkFiles(z, x, y, resolve, reject) {
         var geomFilename = FILES_PREFIX + z + '_' + x + '_' + y + '_geom.txt',
-            infoFilename = FILES_PREFIX + z + '_' + x + '_' + y + '_info.txt';
+            infoFilename = FILES_PREFIX + z + '_' + x + '_' + y + '_binfo';
 
         console.log('check', geomFilename, infoFilename);
 
@@ -78,19 +78,23 @@ var responseFromRenderer = function(key, isPNG, res) {
         renderer.getPNGStream().pipe(res);
     } else {
         console.log('sending indexes', renderer.indexes.length);
-        res.send(renderer.indexes);
+        var buffer = new Buffer(TileRenderer.indexesToArray(renderer.indexes).buffer);
+        res.type('binary');
+        res.send(buffer);
     }
 }
 
 app.use(cors());
 app.use(compression());
-app.get('/tracks/:z/:x/:y.(png|txt)', function(req, res) {
+app.get('/tracks/:z/:x/:y.(png|bin)', function(req, res) {
+    console.log('new request');
     var p = req.params,
         isPNG = p[0] === 'png',
-        postfix = isPNG ? 'img' : 'info',
-        filename = p.z + '_' + p.x + '_' + p.y + '_' + postfix + '.' + p[0];
+        postfix = isPNG ? 'img' : 'binfo',
+        filename = p.z + '_' + p.x + '_' + p.y + '_' + postfix + (isPNG ? '.png' : '');
 
     //step 1: try to send already saved file
+    res.type(isPNG ? 'png' : 'binary');
     res.sendFile(filename, {root: FILES_PREFIX}, function(err) {
         if (err) {
             var key = p.z + '_' + p.x + '_' + p.y;
@@ -124,6 +128,8 @@ app.get('/tracks/:z/:x/:y.(png|txt)', function(req, res) {
             }).catch(function(err) {
                 console.log(err);
             });
+        } else {
+            console.log('Found file', filename)
         }
     });
 });

@@ -56,7 +56,7 @@ $(function() {
     // var spotLayer = new L.HybridLayer('http://aparshin.ru/maps/render/{z}_{x}_{y}', {colorFunc: colorFunc});
     var activeLayer = trackLayer;
 
-    trackLayer.addRenderHook(function(canvas, tilePoint, zoom, tileViewer) {
+    /* trackLayer.addRenderHook(function(canvas, tilePoint, zoom, tileViewer) {
         var ctx = canvas.getContext('2d');
         ctx.beginPath();
         ctx.rect(0, 0, 256, 256);
@@ -78,7 +78,7 @@ $(function() {
         for (var t in objs) {objsCount++};
 
         ctx.fillText('Objects: ' + objsCount, 10, 60);
-    })
+    }) */
 
     activeLayer.addTo(map);
 

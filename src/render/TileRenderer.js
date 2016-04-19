@@ -110,9 +110,10 @@ TileRenderer.prototype.getPNGStream = function() {
     return canvas.pngStream();
 }
 
-TileRenderer.prototype.saveToFiles = function(prefix, skipOptimization) {
+TileRenderer.prototype.saveToFiles = function(prefix, options) {
+    options = options || {};
 
-    skipOptimization || this.removeNotUsed();
+    options.skipOptimization || this.removeNotUsed();
 
     var pngFD = fs.openSync(prefix + '_img.png', 'w'),
         def = Q.defer(),
@@ -126,16 +127,24 @@ TileRenderer.prototype.saveToFiles = function(prefix, skipOptimization) {
         fs.closeSync(pngFD);
         def.resolve();
     });
-    
-    var txtFile = fs.writeFileSync(prefix + '_info.txt', JSON.stringify(this.indexes));
+   
+    if (options.binaryFormat) { 
+        var arr = TileRenderer.indexesToArray(this.indexes),
+            buffer = new Buffer(arr.buffer);
+
+        fs.writeFileSync(prefix + '_binfo', buffer);
+    } else {
+        fs.writeFileSync(prefix + '_info.txt', JSON.stringify(this.indexes));
+    }
 
     return def.promise;
 }
 
 //suppose that already rendered objects and objects from file are not intersected
-TileRenderer.prototype.loadFromFiles = function(filesPrefix) {
+TileRenderer.prototype.loadFromFiles = function(filesPrefix, options) {
+    option = options || {};
     var pngFilename = filesPrefix + '_img.png',
-        infoFilename = filesPrefix + '_info.txt';
+        infoFilename = filesPrefix + (options.binaryFormat ? '_binfo' : '_info.txt');
 
     if (!fs.existsSync(pngFilename) || !fs.existsSync(infoFilename)) {
         return;
@@ -148,8 +157,9 @@ TileRenderer.prototype.loadFromFiles = function(filesPrefix) {
     img.src = pngFilename;
     ctx.drawImage(img, 0, 0, 256, 256);
     
-    var data = ctx.getImageData(0, 0, 256, 256).data;
-    var newIndexes = JSON.parse(fs.readFileSync(infoFilename));
+    var data = ctx.getImageData(0, 0, 256, 256).data,
+        converter = options.binaryFormat ? TileRenderer.arrayToIndexes : JSON.parse,
+        newIndexes = converter(fs.readFileSync(infoFilename));
 
     var mergeCache = {};
     for (var i = 0; i < 256*256; i++) {
@@ -182,6 +192,46 @@ TileRenderer.prototype.loadFromFiles = function(filesPrefix) {
     for (var i in objsHash) {
         this.objs.push(objsHash[i]);
     }
+}
+
+TileRenderer.indexesToArray = function(indexes) {
+    var prefixLength = 1 + indexes.length,
+        length = 0;
+
+    for (var n = 0; n < indexes.length; n++) {
+        length += indexes[n].length;
+    }
+
+
+    var arr = new Uint32Array(prefixLength + length);
+
+    arr[0] = indexes.length;
+
+    var curArrIndex = prefixLength;
+
+    for (var n = 0; n < indexes.length; n++) {
+        arr[n + 1] = curArrIndex;
+        arr.set(indexes[n], curArrIndex);
+        curArrIndex += indexes[n].length;
+    }
+
+    return arr;
+}
+
+TileRenderer.arrayToIndexes = function(buffer) {
+    var tmpArr = new Uint8Array(buffer),
+        arr = new Uint32Array(tmpArr.buffer),
+        count = arr[0],
+        resArr = new Array(count);
+
+    for (var i = 0; i < count; i++) {
+        var begin = arr[i+1],
+            end = i === count - 1 ? arr.length : arr[i+2];
+
+        resArr[i] = Array.prototype.slice.call(arr.subarray(begin, end));
+    }
+
+    return resArr;
 }
 
 module.exports = TileRenderer;

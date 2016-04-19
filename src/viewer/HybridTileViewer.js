@@ -9,7 +9,8 @@ var HybridTileViewer = function(imgUrl, infoUrl, options) {
         return a - b;
     }
 
-    var infoDef = $.getJSON(infoUrl);
+    // var infoDef = $.getJSON(infoUrl);
+    var infoDef = this._loadBinaryInfo(infoUrl);
 
     var img = new Image();
     img.onload = function() {
@@ -37,10 +38,30 @@ var HybridTileViewer = function(imgUrl, infoUrl, options) {
     img.src = imgUrl;
 }
 
+HybridTileViewer.prototype._loadBinaryInfo = function(infoURL) {
+    var xhr = new XMLHttpRequest(),
+        def = new $.Deferred();
+
+    xhr.open('GET', infoURL, true);
+    xhr.responseType = 'arraybuffer';
+
+    xhr.onload = function(e) {
+        if (this.status === 200) {
+            console.log(this.response.byteLength, infoURL);
+            var responseArray = new Uint32Array(this.response); 
+            def.resolve(responseArray);
+        }
+    };
+
+    xhr.send();
+    return def;
+}
+
 HybridTileViewer.prototype.render = function(ctx) {
     var dataInfo = ctx.getImageData(0, 0, 256, 256),
         data = dataInfo.data,
-        objManager = this.options.objectsManager;
+        objManager = this.options.objectsManager,
+        indexCount = this.indexes[0];
 
     this._indColors = [];
     for (var p = 0; p < 256*256; p++) {
@@ -48,13 +69,15 @@ HybridTileViewer.prototype.render = function(ctx) {
 
         if (!this._indColors[index]) {
 
-            var objs = this.indexes[index],
+            var objsStart = this.indexes[1 + index],
+                objsEnd = index === indexCount - 1 ? this.indexes.length : this.indexes[2 + index],
+                objs = this.indexes.subarray(objsStart, objsEnd),
+                // objs = this.indexes[index],
                 a = [0, 0, 0, 0];
 
             if (objManager.getIndexColor) {
                 a = objManager.getIndexColor(objs);
             } else {
-            
                 for (var i = 0; i < objs.length; i++) {
                     var b = objManager.getColor(objs[i]);
                     var ta = b[3]*(1.0 - a[3]);
@@ -88,14 +111,18 @@ HybridTileViewer.prototype.getObjectsNearPixel = function(x, y, size) {
         xmax = Math.min(xmin + size, 255),
         ymax = Math.min(ymin + size, 255);
 
-    var commonObjHash = {};
-    
+    var commonObjHash = {},
+        indexCount = this.indexes[0];
+
     for (var ix = xmin; ix < xmax; ix++) {
         for (var iy = ymin; iy < ymax; iy++) {
-            var index = this._buf[iy*256 + ix] & 0xffffff;
+            var index = this._buf[iy*256 + ix] & 0xffffff,
+                start = this.indexes[1+index],
+                end = index === indexCount - 1 ? this.indexes.length : this.indexes[2+index];
+
             var objs = this.indexes[index];
-            for (var i = 0; i < objs.length; i++) {
-                commonObjHash[objs[i]] = true;
+            for (var i = start; i < end; i++) {
+                commonObjHash[this.indexes[i]] = true;
             }
         }
     }

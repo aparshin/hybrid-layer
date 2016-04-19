@@ -153,10 +153,10 @@ HybridRenderer.prototype._processTile = function(options) {
 
         if (options.loadFromFiles) {
             var filePrefix = this._getTilePrefix(tilePos);
-            tileRenderer.loadFromFiles(filePrefix);
+            tileRenderer.loadFromFiles(filePrefix, {binaryFormat: true});
         }
 
-        tileRenderer.saveToFiles(filePrefix).then(function() {
+        tileRenderer.saveToFiles(filePrefix, {binaryFormat: true}).then(function() {
             _this._renderQueue.unshift({x: tilePos.x,   y: tilePos.y,   z: tilePos.z, action: 'clear'});
             if (tilePos.z < _this._maxZoom) {
                 _this._renderQueue.unshift({x: 2*tilePos.x,   y: 2*tilePos.y,   z: tilePos.z+1});

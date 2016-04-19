@@ -22,7 +22,8 @@ var gpxFile = './data/australia-oceania.tar.xz',
     metadataFile = './data/metadata.xml',
     META_FILENAME_PREFIX = 'gpx-planet-2013-04-09/',
     MAX_POINTS = 500000,
-    MAX_TRACKS = 0,
+    // MAX_POINTS = 5000,
+    MAX_TRACKS = 200,
     MAX_ZOOM = 17,
     MAX_DISTANCE = 1/500, //about 800 Mercator kilometers
     MIN_POINTS = 10;
@@ -163,15 +164,16 @@ xmlParser.parseString(fs.readFileSync(metadataFile), function(err, result) {
             tarParser.pause();
             count++;
             parseTracks().done(() => {
+                var isReachedMaxTracks = MAX_TRACKS && count >= MAX_TRACKS;
                 console.log(`Tracks: ${count}, points: ${trackChunkPoints}`); 
-                if (MAX_TRACKS && count >= MAX_TRACKS) {
+                if (isReachedMaxTracks) {
                     console.log('destroy', count);
                     rawStream.removeAllListeners('entry');
                     inFile.destroy();
                     fs.writeFileSync('./result/filenames.js', JSON.stringify(filenames));
                     //heapdump.writeSnapshot();
                 }
-                if (trackChunkPoints >= MAX_POINTS) {
+                if (trackChunkPoints >= MAX_POINTS || isReachedMaxTracks) {
                     renderTracks().done(() => {
                         trackChunkPoints = 0;
                         trackChunk = [];

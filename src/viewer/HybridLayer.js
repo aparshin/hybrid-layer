@@ -66,12 +66,12 @@ L.HybridLayer = L.TileLayer.Canvas.extend({
 
         var tileViewer = new HybridTileViewer(
             prefix + '.png', 
-            prefix + '.txt', 
+            prefix + '.bin', 
             {objectsManager: this._objectsManager}
         );
 
         tileViewer.promise.then(function() {
-            tileViewer.sort(_this.options.sortFunc);
+            //tileViewer.sort(_this.options.sortFunc);
             _this._tileViewers[id] = {
                 bounds: bounds,
                 viewer: tileViewer,
